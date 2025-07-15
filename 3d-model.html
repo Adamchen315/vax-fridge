@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vax Fridge 3D Model - Interactive Design</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/OrbitControls.js"></script>
+    <style>
+        .model-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .model-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .model-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .model-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .model-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .model-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 12px;
+            max-width: 200px;
+        }
+        
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        .model-specs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .spec-card {
+            background: rgba(26, 26, 46, 0.6);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .spec-title {
+            color: #4fc3f7;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .spec-value {
+            color: white;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .error-message {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .fallback-model {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+        }
+        
+        .fallback-model .model-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-icon">🧊</span>
+                <span class="logo-text">Vax Fridge</span>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-category" data-category="problem">
+                    <span class="category-icon">⚠️</span>
+                    <span class="category-text">Problem & Context</span>
+                    <div class="dropdown">
+                        <a href="index.html">Home</a>
+                        <a href="project-background.html">Project Background</a>
+                        <a href="ecosystem.html">mRNA Vaccine Ecosystem</a>
+                        <a href="cold-chain-challenges.html">Cold Chain Challenges</a>
+                        <a href="contact.html">Contact</a>
+                    </div>
+                </div>
+                <div class="nav-category" data-category="solution">
+                    <span class="category-icon">🧪</span>
+                    <span class="category-text">The Solution: Vax Fridge</span>
+                    <div class="dropdown">
+                        <a href="features.html">Core Features</a>
+                        <a href="technology.html">Technology Overview</a>
+                        <a href="3d-model.html">3D Model</a>
+                        <a href="solar-power.html">Solar Power System</a>
+                        <a href="temperature-control.html">Temperature Control</a>
+                        <a href="monitoring.html">Remote Monitoring</a>
+                        <a href="compliance.html">GMP Compliance</a>
+                        <a href="deployment.html">Deployment Process</a>
+                        <a href="maintenance.html">Maintenance</a>
+                        <a href="cost-analysis.html">Cost Analysis</a>
+                    </div>
+                </div>
+                <div class="nav-category" data-category="impact">
+                    <span class="category-icon">🎯</span>
+                    <span class="category-text">Professionalism & Impact</span>
+                    <div class="dropdown">
+                        <a href="clinical-trials.html">Indonesia Pilot</a>
+                        <a href="regulatory-approval.html">Regulatory Pathway</a>
+                        <a href="partnerships.html">Strategic Partnerships</a>
+                        <a href="global-impact.html">Innovation Impact</a>
+                        <a href="sustainability.html">Sustainability</a>
+                        <a href="quality-assurance.html">Quality Assurance</a>
+                        <a href="innovation.html">Innovation Pipeline</a>
+                        <a href="awards.html">Project Vision</a>
+                    </div>
+                </div>
+                <div class="nav-category" data-category="support">
+                    <span class="category-icon">🛠️</span>
+                    <span class="category-text">Support & Resources</span>
+                    <div class="dropdown">
+                        <a href="documentation.html">Documentation Plan</a>
+                        <a href="training.html">Training Development</a>
+                        <a href="technical-support.html">Technical Support</a>
+                    </div>
+                </div>
+                <div class="nav-category" data-category="about">
+                    <span class="category-icon">👥</span>
+                    <span class="category-text">About & Get Involved</span>
+                    <div class="dropdown">
+                        <a href="our-team.html">Project Team</a>
+                        <a href="mission.html">Mission & Vision</a>
+                        <a href="careers.html">Join Our Mission</a>
+                        <a href="investors.html">Investment Opportunity</a>
+                        <a href="media.html">Media & Press</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-background">
+            <div class="background-layer gradient-overlay"></div>
+            <div class="background-layer medical-pattern"></div>
+            <div class="floating-icons">
+                <div class="floating-icon icon-1">🧊</div>
+                <div class="floating-icon icon-2">🔬</div>
+                <div class="floating-icon icon-3">⚡</div>
+                <div class="floating-icon icon-4">🌡️</div>
+                <div class="floating-icon icon-5">☀️</div>
+                <div class="floating-icon icon-6">📡</div>
+                <div class="floating-icon icon-7">🏝️</div>
+                <div class="floating-icon icon-8">🌍</div>
+            </div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-icon">🎯</div>
+            <h1 class="hero-title">
+                <span class="title-line">Vax Fridge</span>
+                <span class="title-line highlight">3D Model</span>
+            </h1>
+            <p class="hero-subtitle">
+                Explore our innovative solar-powered portable vaccine refrigeration system 
+                in interactive 3D detail
+            </p>
+            <div class="hero-buttons">
+                <a href="#model-viewer" class="btn btn-primary">View 3D Model</a>
+                <a href="features.html" class="btn btn-secondary">Technical Features</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3D Model Viewer -->
+    <section class="features" id="model-viewer">
+        <div class="section-background">
+            <div class="background-layer gradient-blue"></div>
+            <div class="medical-grid"></div>
+        </div>
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Interactive 3D Model</h2>
+                <p class="section-subtitle">
+                    Explore the Vax Fridge design concept in detail
+                </p>
+            </div>
+            
+            <div class="model-container">
+                <canvas id="model-canvas" class="model-canvas"></canvas>
+                <div id="loading" class="loading-spinner">
+                    <div>🔄 Loading 3D Model...</div>
+                    <div style="font-size: 14px; margin-top: 10px;">Please wait while we load the model</div>
+                </div>
+                <div id="fallback" class="fallback-model" style="display: none;">
+                    <div class="model-icon">🧊</div>
+                    <h3>Vax Fridge 3D Model</h3>
+                    <p>Interactive 3D model preview</p>
+                    <div style="margin-top: 20px;">
+                        <div>📏 Dimensions: 60×40×45 cm</div>
+                        <div>⚖️ Weight: 25 kg</div>
+                        <div>❄️ Temperature: 2-8°C</div>
+                        <div>☀️ Solar Powered</div>
+                    </div>
+                </div>
+                <div class="model-info">
+                    <div style="font-weight: 600; margin-bottom: 10px;">🎮 Controls</div>
+                    <div>• Mouse: Rotate view</div>
+                    <div>• Scroll: Zoom in/out</div>
+                    <div>• Drag: Pan view</div>
+                </div>
+                <div class="model-controls">
+                    <button class="model-btn" onclick="resetView()">🏠 Reset View</button>
+                    <button class="model-btn" onclick="toggleWireframe()">🔲 Wireframe</button>
+                    <button class="model-btn" onclick="toggleAnimation()">▶️ Animate</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Specifications -->
+    <section class="statistics">
+        <div class="section-background">
+            <div class="background-layer gradient-warm"></div>
+            <div class="stats-pattern"></div>
+        </div>
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Design Specifications</h2>
+                <p class="section-subtitle">
+                    Technical details and dimensions of the Vax Fridge system
+                </p>
+            </div>
+            
+            <div class="model-specs">
+                <div class="spec-card">
+                    <div class="spec-title">📏 Dimensions</div>
+                    <div class="spec-value">Length: 60cm</div>
+                    <div class="spec-value">Width: 40cm</div>
+                    <div class="spec-value">Height: 45cm</div>
+                    <div class="spec-value">Weight: 25kg</div>
+                </div>
+                
+                <div class="spec-card">
+                    <div class="spec-title">❄️ Cooling System</div>
+                    <div class="spec-value">Temperature Range: 2-8°C</div>
+                    <div class="spec-value">Cooling Capacity: 50L</div>
+                    <div class="spec-value">Insulation: High-density foam</div>
+                    <div class="spec-value">Backup Time: 72 hours</div>
+                </div>
+                
+                <div class="spec-card">
+                    <div class="spec-title">☀️ Solar Power</div>
+                    <div class="spec-value">Panel Output: 200W</div>
+                    <div class="spec-value">Battery: 12V 100Ah LiFePO4</div>
+                    <div class="spec-value">Charge Time: 6-8 hours</div>
+                    <div class="spec-value">Runtime: 5-7 days</div>
+                </div>
+                
+                <div class="spec-card">
+                    <div class="spec-title">📡 Monitoring</div>
+                    <div class="spec-value">Connectivity: 4G/WiFi</div>
+                    <div class="spec-value">GPS Tracking: Built-in</div>
+                    <div class="spec-value">Sensors: Temperature, humidity</div>
+                    <div class="spec-value">Alerts: Real-time notifications</div>
+                </div>
+                
+                <div class="spec-card">
+                    <div class="spec-title">🛡️ Protection</div>
+                    <div class="spec-value">Rating: IP65 weatherproof</div>
+                    <div class="spec-value">Material: Medical-grade ABS</div>
+                    <div class="spec-value">Lock: Digital keypad</div>
+                    <div class="spec-value">Alarm: Tamper detection</div>
+                </div>
+                
+                <div class="spec-card">
+                    <div class="spec-title">🌍 Portability</div>
+                    <div class="spec-value">Handles: Ergonomic design</div>
+                    <div class="spec-value">Wheels: All-terrain</div>
+                    <div class="spec-value">Mounting: Vehicle compatible</div>
+                    <div class="spec-value">Setup: Tool-free assembly</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta">
+        <div class="section-background">
+            <div class="background-layer gradient-success"></div>
+            <div class="cta-pattern"></div>
+        </div>
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to Learn More?</h2>
+                <p class="cta-subtitle">Explore the technical features and implementation details</p>
+                <div class="cta-buttons">
+                    <a href="features.html" class="btn btn-primary large">Technical Features</a>
+                    <a href="clinical-trials.html" class="btn btn-outline large">Indonesia Pilot</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <span class="logo-icon">🧊</span>
+                        <span class="logo-text">Vax Fridge</span>
+                    </div>
+                    <p class="footer-description">
+                        Innovative solar-powered vaccine refrigeration for remote communities. 
+                        Starting with Indonesia pilot program in 2025.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Project</h4>
+                    <ul class="footer-links">
+                        <li><a href="project-background.html">Background</a></li>
+                        <li><a href="mission.html">Mission</a></li>
+                        <li><a href="clinical-trials.html">Indonesia Pilot</a></li>
+                        <li><a href="innovation.html">Innovation</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Get Involved</h4>
+                    <ul class="footer-links">
+                        <li><a href="careers.html">Join Our Team</a></li>
+                        <li><a href="investors.html">Investment</a></li>
+                        <li><a href="partnerships.html">Partnerships</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Vax Fridge Innovation Project. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 3D Model Viewer Script
+        let scene, camera, renderer, model, controls;
+        let isWireframe = false;
+        let isAnimating = false;
+        let animationId;
+        let modelLoaded = false;
+
+        function init() {
+            try {
+                // Check if Three.js is available
+                if (typeof THREE === 'undefined') {
+                    showFallback('Three.js library not loaded');
+                    return;
+                }
+
+                // Create scene
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x1a1a2e);
+
+                // Create camera
+                const container = document.querySelector('.model-container');
+                camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+                camera.position.set(2, 2, 2);
+
+                // Create renderer
+                const canvas = document.getElementById('model-canvas');
+                renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+                // Add controls
+                if (typeof THREE.OrbitControls !== 'undefined') {
+                    controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    controls.enableDamping = true;
+                    controls.dampingFactor = 0.05;
+                }
+
+                // Add lights
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+                scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(5, 5, 5);
+                directionalLight.castShadow = true;
+                scene.add(directionalLight);
+
+                const pointLight = new THREE.PointLight(0x4fc3f7, 0.5);
+                pointLight.position.set(-5, 3, 2);
+                scene.add(pointLight);
+
+                // Load 3D model
+                loadModel();
+
+                // Start animation loop
+                animate();
+
+            } catch (error) {
+                console.error('Error initializing 3D viewer:', error);
+                showFallback('Failed to initialize 3D viewer');
+            }
+        }
+
+        function loadModel() {
+            try {
+                if (typeof THREE.GLTFLoader === 'undefined') {
+                    showFallback('GLTF Loader not available');
+                    return;
+                }
+
+                const loader = new THREE.GLTFLoader();
+                loader.load(
+                    'Design_a_portable_so_0715141705_texture.glb',
+                    function (gltf) {
+                        model = gltf.scene;
+                        
+                        // Scale and position the model
+                        model.scale.set(1, 1, 1);
+                        model.position.set(0, 0, 0);
+                        
+                        // Enable shadows
+                        model.traverse(function (child) {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
+                        
+                        scene.add(model);
+                        modelLoaded = true;
+                        
+                        // Hide loading spinner
+                        document.getElementById('loading').style.display = 'none';
+                        
+                        console.log('3D model loaded successfully');
+                    },
+                    function (progress) {
+                        const percent = Math.round((progress.loaded / progress.total) * 100);
+                        console.log('Loading progress:', percent + '%');
+                        document.getElementById('loading').innerHTML = `
+                            <div>🔄 Loading 3D Model...</div>
+                            <div style="font-size: 14px; margin-top: 10px;">${percent}% loaded</div>
+                        `;
+                    },
+                    function (error) {
+                        console.error('Error loading 3D model:', error);
+                        showFallback('3D model file not found or corrupted');
+                    }
+                );
+            } catch (error) {
+                console.error('Error in loadModel:', error);
+                showFallback('Failed to load 3D model');
+            }
+        }
+
+        function showFallback(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('fallback').style.display = 'block';
+            console.log('Showing fallback:', message);
+        }
+
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            if (controls) {
+                controls.update();
+            }
+            
+            if (model && isAnimating) {
+                model.rotation.y += 0.01;
+            }
+            
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+
+        function resetView() {
+            if (controls) {
+                controls.reset();
+                camera.position.set(2, 2, 2);
+            }
+        }
+
+        function toggleWireframe() {
+            if (model) {
+                isWireframe = !isWireframe;
+                model.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.material.wireframe = isWireframe;
+                    }
+                });
+            }
+        }
+
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            const btn = document.querySelector('.model-controls .model-btn:last-child');
+            if (btn) {
+                btn.textContent = isAnimating ? '⏸️ Pause' : '▶️ Animate';
+            }
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (camera && renderer) {
+                const container = document.querySelector('.model-container');
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        });
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            // Add a small delay to ensure all libraries are loaded
+            setTimeout(init, 100);
+        });
+
+        // Fallback if 3D model fails to load after 10 seconds
+        setTimeout(function() {
+            if (!modelLoaded) {
+                showFallback('3D model loading timeout - showing concept preview');
+            }
+        }, 10000);
+    </script>
+
+    <script src="script.js"></script>
+</body>
+</html> 
