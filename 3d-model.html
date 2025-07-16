@@ -7,10 +7,10 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Three.js 库 - 修复GitHub Pages兼容性 -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Three.js 库 - 官方CDN -->
+    <script src="https://threejs.org/build/three.min.js"></script>
+    <script src="https://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
     
     <style>
         .model-container {
@@ -148,16 +148,21 @@
             .model-controls {
                 bottom: 10px;
                 padding: 10px;
-                gap: 8px;
+                gap: 6px;
                 border-radius: 10px;
                 flex-wrap: wrap;
                 justify-content: center;
+                max-width: 90%;
+                left: 50%;
+                transform: translateX(-50%);
             }
             
             .model-btn {
-                padding: 8px 15px;
-                font-size: 12px;
-                min-width: 60px;
+                padding: 8px 12px;
+                font-size: 11px;
+                min-width: 50px;
+                flex: 1;
+                max-width: 80px;
             }
             
             .model-info {
@@ -189,13 +194,15 @@
             
             .model-controls {
                 padding: 8px;
-                gap: 5px;
+                gap: 4px;
+                bottom: 5px;
             }
             
             .model-btn {
-                padding: 6px 12px;
-                font-size: 11px;
-                min-width: 50px;
+                padding: 6px 8px;
+                font-size: 10px;
+                min-width: 40px;
+                max-width: 60px;
             }
             
             .model-info {
@@ -205,6 +212,12 @@
             
             .loading-spinner {
                 font-size: 14px;
+            }
+            
+            .glb-instructions {
+                max-width: 90% !important;
+                padding: 15px !important;
+                font-size: 12px !important;
             }
         }
         
@@ -446,6 +459,7 @@
                     <button class="model-btn" onclick="resetView()">🏠 Reset View</button>
                     <button class="model-btn" onclick="toggleWireframe()">🔲 Wireframe</button>
                     <button class="model-btn" onclick="toggleAnimation()">▶️ Animate</button>
+                    <button class="model-btn" onclick="showGLBInstructions()">📁 文件说明</button>
                     <button class="model-btn" onclick="toggleDebug()">🔧 Debug</button>
                 </div>
             </div>
@@ -728,60 +742,83 @@
                     loadingEl.innerHTML = '🔄 正在加载3D模型...';
                 }
 
-                // 尝试加载GLB文件
-                const modelPath = './Design_a_portable_so_0715141705_texture.glb';
-                debug('尝试加载模型: ' + modelPath);
+                // 尝试多个可能的GLB文件路径
+                const possiblePaths = [
+                    './Design_a_portable_so_0715141705_texture.glb',  // 当前目录
+                    'Design_a_portable_so_0715141705_texture.glb',   // 相对路径
+                    '/Design_a_portable_so_0715141705_texture.glb',   // 根目录
+                    './assets/Design_a_portable_so_0715141705_texture.glb',  // assets目录
+                    './models/Design_a_portable_so_0715141705_texture.glb'   // models目录
+                ];
                 
-                loader.load(
-                    modelPath,
-                    function (gltf) {
-                        debug('✓ 模型加载成功');
-                        model = gltf.scene;
-                        
-                        // 调整模型
-                        model.scale.set(1, 1, 1);
-                        model.position.set(0, 0, 0);
-                        
-                        // 启用阴影
-                        model.traverse(function (child) {
-                            if (child.isMesh) {
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                                
-                                if (child.material) {
-                                    child.material.needsUpdate = true;
+                let pathIndex = 0;
+                
+                function tryLoadModel() {
+                    if (pathIndex >= possiblePaths.length) {
+                        debug('❌ 所有路径都尝试失败，使用备用模型');
+                        createFallbackModel();
+                        return;
+                    }
+                    
+                    const currentPath = possiblePaths[pathIndex];
+                    debug(`尝试路径 ${pathIndex + 1}/${possiblePaths.length}: ${currentPath}`);
+                    
+                    loader.load(
+                        currentPath,
+                        function (gltf) {
+                            debug('✓ 模型加载成功，路径: ' + currentPath);
+                            model = gltf.scene;
+                            
+                            // 调整模型
+                            model.scale.set(1, 1, 1);
+                            model.position.set(0, 0, 0);
+                            
+                            // 启用阴影
+                            model.traverse(function (child) {
+                                if (child.isMesh) {
+                                    child.castShadow = true;
+                                    child.receiveShadow = true;
+                                    
+                                    if (child.material) {
+                                        child.material.needsUpdate = true;
+                                    }
+                                }
+                            });
+                            
+                            scene.add(model);
+                            modelLoaded = true;
+                            
+                            // 隐藏加载指示器
+                            if (loadingEl) {
+                                loadingEl.style.display = 'none';
+                            }
+                            
+                            debug('✓ 模型已添加到场景');
+                            showModelInfo('真实3D模型已加载');
+                        },
+                        function (progress) {
+                            if (progress.total > 0) {
+                                const percent = Math.round((progress.loaded / progress.total) * 100);
+                                debug('加载进度: ' + percent + '%');
+                                if (loadingEl) {
+                                    loadingEl.innerHTML = `
+                                        <div>🔄 正在加载3D模型...</div>
+                                        <div style="font-size: 14px; margin-top: 10px;">${percent}% 已完成</div>
+                                        <div style="font-size: 12px; margin-top: 5px;">路径: ${currentPath}</div>
+                                    `;
                                 }
                             }
-                        });
-                        
-                        scene.add(model);
-                        modelLoaded = true;
-                        
-                        // 隐藏加载指示器
-                        if (loadingEl) {
-                            loadingEl.style.display = 'none';
+                        },
+                        function (error) {
+                            debug(`❌ 路径失败: ${currentPath} - 错误: ${error}`);
+                            pathIndex++;
+                            setTimeout(tryLoadModel, 100); // 短暂延迟后尝试下一个路径
                         }
-                        
-                        debug('✓ 模型已添加到场景');
-                    },
-                    function (progress) {
-                        if (progress.total > 0) {
-                            const percent = Math.round((progress.loaded / progress.total) * 100);
-                            debug('加载进度: ' + percent + '%');
-                            if (loadingEl) {
-                                loadingEl.innerHTML = `
-                                    <div>🔄 正在加载3D模型...</div>
-                                    <div style="font-size: 14px; margin-top: 10px;">${percent}% 已完成</div>
-                                `;
-                            }
-                        }
-                    },
-                    function (error) {
-                        debug('模型加载失败: ' + error);
-                        console.error('Error loading 3D model:', error);
-                        createFallbackModel();
-                    }
-                );
+                    );
+                }
+                
+                // 开始尝试加载
+                tryLoadModel();
             } catch (error) {
                 debug('loadModel错误: ' + error.message);
                 console.error('Error in loadModel:', error);
@@ -842,8 +879,13 @@
                 
                 debug('✓ 备用模型已创建');
                 
-                // 显示说明
+                // 显示说明和GLB文件放置指导
                 showModelInfo('显示简化的Vax Fridge模型');
+                
+                // 3秒后显示GLB文件放置说明
+                setTimeout(() => {
+                    showGLBInstructions();
+                }, 3000);
                 
             } catch (error) {
                 debug('创建备用模型失败: ' + error.message);
@@ -869,6 +911,7 @@
                     z-index: 10;
                     backdrop-filter: blur(10px);
                     text-align: center;
+                    max-width: 300px;
                 `;
                 info.textContent = message;
                 container.appendChild(info);
@@ -879,6 +922,61 @@
                         info.parentNode.removeChild(info);
                     }
                 }, 5000);
+            }
+        }
+
+        function showGLBInstructions() {
+            const container = document.querySelector('.model-container');
+            if (container) {
+                // 移除已存在的说明
+                const existingInstructions = container.querySelector('.glb-instructions');
+                if (existingInstructions) {
+                    existingInstructions.remove();
+                }
+                
+                const instructions = document.createElement('div');
+                instructions.className = 'glb-instructions';
+                instructions.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(26, 26, 46, 0.95);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 15px;
+                    font-size: 14px;
+                    z-index: 50;
+                    backdrop-filter: blur(10px);
+                    text-align: center;
+                    max-width: 400px;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                `;
+                instructions.innerHTML = `
+                    <h3 style="margin: 0 0 15px 0; color: #4fc3f7;">📁 GLB文件放置说明</h3>
+                    <p style="margin: 0 0 10px 0; line-height: 1.4;">
+                        要显示真实的3D模型，请将您的GLB文件放置在以下位置之一：
+                    </p>
+                    <div style="text-align: left; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; margin: 10px 0;">
+                        • ./Design_a_portable_so_0715141705_texture.glb<br>
+                        • /Design_a_portable_so_0715141705_texture.glb<br>
+                        • ./assets/Design_a_portable_so_0715141705_texture.glb<br>
+                        • ./models/Design_a_portable_so_0715141705_texture.glb
+                    </div>
+                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #aaa;">
+                        目前显示的是备用模型。刷新页面以重新尝试加载。
+                    </p>
+                    <button onclick="this.parentElement.remove()" style="
+                        margin-top: 10px; 
+                        padding: 5px 15px; 
+                        background: #4fc3f7; 
+                        border: none; 
+                        border-radius: 5px; 
+                        color: white; 
+                        cursor: pointer;
+                    ">知道了</button>
+                `;
+                container.appendChild(instructions);
             }
         }
 
