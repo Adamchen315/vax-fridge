@@ -7,10 +7,57 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Three.js 库 - 官方CDN -->
-    <script src="https://threejs.org/build/three.min.js"></script>
-    <script src="https://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+    <!-- Three.js 库 - 更可靠的CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- 备用CDN -->
+    <script>
+        // 检查第一个CDN是否加载成功，如果失败则加载备用CDN
+        window.addEventListener('load', function() {
+            if (typeof THREE === 'undefined') {
+                console.log('主CDN失败，尝试备用CDN...');
+                loadBackupCDN();
+            }
+        });
+        
+        function loadBackupCDN() {
+            // 防止重复加载
+            if (backupCDNLoading) {
+                console.log('备用CDN已在加载中...');
+                return;
+            }
+            backupCDNLoading = true;
+            
+            const scripts = [
+                'https://unpkg.com/three@0.155.0/build/three.min.js',
+                'https://unpkg.com/three@0.155.0/examples/js/loaders/GLTFLoader.js',
+                'https://unpkg.com/three@0.155.0/examples/js/controls/OrbitControls.js'
+            ];
+            
+            let loadedCount = 0;
+            scripts.forEach((src, index) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = function() {
+                    loadedCount++;
+                    if (loadedCount === scripts.length) {
+                        console.log('备用CDN加载完成');
+                        // 重置初始化标志并重新初始化
+                        initAttempted = false;
+                        if (typeof init === 'function') {
+                            setTimeout(init, 100);
+                        }
+                    }
+                };
+                script.onerror = function() {
+                    console.error('备用CDN也失败:', src);
+                };
+                document.head.appendChild(script);
+            });
+        }
+    </script>
     
     <style>
         .model-container {
@@ -597,6 +644,8 @@
         let animationId;
         let modelLoaded = false;
         let debugMode = true; // 启用调试模式
+        let initAttempted = false; // 防止重复初始化
+        let backupCDNLoading = false; // 防止重复加载备用CDN
 
         // 调试函数
         function debug(message) {
@@ -613,11 +662,18 @@
         function init() {
             debug('开始初始化3D查看器...');
             
+            // 防止重复初始化
+            if (initAttempted) {
+                debug('已经尝试过初始化，跳过');
+                return;
+            }
+            initAttempted = true;
+            
             try {
                 // 检查Three.js是否加载
                 if (typeof THREE === 'undefined') {
                     debug('错误: Three.js库未加载');
-                    showFallback('Three.js库加载失败');
+                    showCSSFallback();
                     return;
                 }
                 debug('✓ Three.js库已加载');
@@ -831,6 +887,13 @@
             debug('创建备用模型...');
             
             try {
+                // 检查THREE是否已定义
+                if (typeof THREE === 'undefined') {
+                    debug('THREE未定义，使用CSS备用模型');
+                    showCSSFallback();
+                    return;
+                }
+                
                 // 创建一个旋转的立方体组合
                 const group = new THREE.Group();
                 
@@ -886,7 +949,125 @@
             } catch (error) {
                 debug('创建备用模型失败: ' + error.message);
                 console.error('Error creating fallback model:', error);
-                showFallback('无法创建3D模型');
+                showCSSFallback();
+            }
+        }
+
+        function showCSSFallback() {
+            debug('显示CSS备用模型');
+            
+            // 隐藏加载指示器
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
+            
+            // 隐藏控制按钮
+            const controls = document.querySelector('.model-controls');
+            if (controls) {
+                controls.style.display = 'none';
+            }
+            
+            // 创建CSS 3D模型
+            const container = document.querySelector('.model-container');
+            if (container) {
+                const cssModel = document.createElement('div');
+                cssModel.innerHTML = `
+                    <div style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        perspective: 1000px;
+                    ">
+                        <div style="
+                            width: 200px;
+                            height: 120px;
+                            background: linear-gradient(45deg, #4fc3f7, #29b6f6);
+                            border-radius: 10px;
+                            box-shadow: 0 10px 30px rgba(79, 195, 247, 0.3);
+                            position: relative;
+                            transform-style: preserve-3d;
+                            animation: cssRotate 6s infinite linear;
+                        ">
+                            <!-- 主体 -->
+                            <div style="
+                                position: absolute;
+                                top: 0;
+                                left: 0;
+                                width: 100%;
+                                height: 100%;
+                                background: inherit;
+                                border-radius: inherit;
+                            "></div>
+                            
+                            <!-- 太阳能板 -->
+                            <div style="
+                                position: absolute;
+                                top: -20px;
+                                left: -10px;
+                                width: 220px;
+                                height: 15px;
+                                background: linear-gradient(45deg, #1a237e, #303f9f);
+                                border-radius: 5px;
+                                box-shadow: 0 5px 15px rgba(26, 35, 126, 0.3);
+                            "></div>
+                            
+                            <!-- 控制面板 -->
+                            <div style="
+                                position: absolute;
+                                top: 30px;
+                                right: -15px;
+                                width: 30px;
+                                height: 20px;
+                                background: #00e676;
+                                border-radius: 3px;
+                                box-shadow: 0 3px 10px rgba(0, 230, 118, 0.3);
+                            "></div>
+                            
+                            <!-- 标签 -->
+                            <div style="
+                                position: absolute;
+                                bottom: -40px;
+                                left: 50%;
+                                transform: translateX(-50%);
+                                color: white;
+                                text-align: center;
+                                font-size: 14px;
+                                font-weight: 600;
+                            ">
+                                Vax Fridge
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <style>
+                        @keyframes cssRotate {
+                            0% { transform: rotateY(0deg) rotateX(10deg); }
+                            100% { transform: rotateY(360deg) rotateX(10deg); }
+                        }
+                    </style>
+                `;
+                container.appendChild(cssModel);
+                
+                // 显示说明
+                showModelInfo('Three.js加载失败，显示CSS备用模型');
+                
+                // 添加重试按钮
+                const retryBtn = document.createElement('button');
+                retryBtn.textContent = '🔄 重新加载';
+                retryBtn.className = 'model-btn';
+                retryBtn.style.cssText = `
+                    position: absolute;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    z-index: 20;
+                `;
+                retryBtn.onclick = function() {
+                    location.reload();
+                };
+                container.appendChild(retryBtn);
             }
         }
 
@@ -1008,6 +1189,10 @@
 
         function resetView() {
             debug('重置视角');
+            if (typeof THREE === 'undefined') {
+                debug('Three.js未可用，无法重置视角');
+                return;
+            }
             if (controls) {
                 controls.reset();
             }
@@ -1019,26 +1204,28 @@
 
         function toggleWireframe() {
             debug('切换线框模式');
-            if (model) {
-                isWireframe = !isWireframe;
-                model.traverse(function (child) {
-                    if (child.isMesh && child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material.forEach(mat => mat.wireframe = isWireframe);
-                        } else {
-                            child.material.wireframe = isWireframe;
-                        }
-                    }
-                });
+            if (typeof THREE === 'undefined' || !model) {
+                debug('Three.js或模型未可用，无法切换线框模式');
+                return;
             }
+            isWireframe = !isWireframe;
+            model.traverse(function (child) {
+                if (child.isMesh && child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => mat.wireframe = isWireframe);
+                    } else {
+                        child.material.wireframe = isWireframe;
+                    }
+                }
+            });
         }
 
         function toggleAnimation() {
             debug('切换动画');
             isAnimating = !isAnimating;
-            const btn = document.querySelector('.model-controls .model-btn:last-child');
-            if (btn) {
-                btn.textContent = isAnimating ? '⏸️ 暂停' : '▶️ 旋转';
+            const btns = document.querySelectorAll('.model-controls .model-btn');
+            if (btns.length >= 3) {
+                btns[2].textContent = isAnimating ? '⏸️ 暂停' : '▶️ 旋转';
             }
         }
 
@@ -1049,9 +1236,9 @@
             if (debugEl) {
                 debugEl.style.display = debugMode ? 'block' : 'none';
             }
-            const debugBtn = document.querySelector('.model-controls .model-btn:last-child');
-            if (debugBtn) {
-                debugBtn.textContent = debugMode ? '🔧 调试' : '🔧 关闭调试';
+            const btns = document.querySelectorAll('.model-controls .model-btn');
+            if (btns.length >= 5) {
+                btns[4].textContent = debugMode ? '🔧 关闭调试' : '🔧 调试';
             }
         }
 
@@ -1075,7 +1262,7 @@
             
             // 等待Three.js库加载完成
             let attempts = 0;
-            const maxAttempts = 50; // 5秒超时
+            const maxAttempts = 100; // 10秒超时
             
             function checkLibraries() {
                 attempts++;
@@ -1083,23 +1270,40 @@
                     debug('Three.js检测成功，开始初始化...');
                     setTimeout(init, 100);
                 } else if (attempts < maxAttempts) {
+                    if (attempts % 10 === 0) {
+                        debug(`等待Three.js库... (${attempts}/100)`);
+                    }
                     setTimeout(checkLibraries, 100);
                 } else {
-                    debug('Three.js加载超时');
-                    showFallback('Three.js库加载超时');
+                    debug('Three.js加载超时，使用CSS备用模型');
+                    showCSSFallback();
                 }
             }
             
             checkLibraries();
         });
 
+        // 页面完全加载后的额外检查
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (typeof THREE === 'undefined' && !modelLoaded) {
+                    debug('页面加载完成但Three.js仍未可用');
+                    showCSSFallback();
+                }
+            }, 2000);
+        });
+
         // 模型加载超时保护
         setTimeout(function() {
             if (!modelLoaded) {
                 debug('模型加载超时，使用备用方案');
-                createFallbackModel();
+                if (typeof THREE !== 'undefined') {
+                    createFallbackModel();
+                } else {
+                    showCSSFallback();
+                }
             }
-        }, 10000);
+        }, 15000);
     </script>
 
     <script src="script.js"></script>
