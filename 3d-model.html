@@ -17,15 +17,15 @@
         // 检查第一个CDN是否加载成功，如果失败则加载备用CDN
         window.addEventListener('load', function() {
             if (typeof THREE === 'undefined') {
-                console.log('主CDN失败，尝试备用CDN...');
+                console.log('[3D Viewer] Main CDN failed, trying backup CDN...');
                 loadBackupCDN();
             }
         });
         
         function loadBackupCDN() {
-            // 防止重复加载
+            // Prevent duplicate loading
             if (backupCDNLoading) {
-                console.log('备用CDN已在加载中...');
+                console.log('[3D Viewer] Backup CDN already loading...');
                 return;
             }
             backupCDNLoading = true;
@@ -43,8 +43,8 @@
                 script.onload = function() {
                     loadedCount++;
                     if (loadedCount === scripts.length) {
-                        console.log('备用CDN加载完成');
-                        // 重置初始化标志并重新初始化
+                        console.log('[3D Viewer] Backup CDN loaded successfully');
+                        // Reset initialization flag and reinitialize
                         initAttempted = false;
                         if (typeof init === 'function') {
                             setTimeout(init, 100);
@@ -52,7 +52,7 @@
                     }
                 };
                 script.onerror = function() {
-                    console.error('备用CDN也失败:', src);
+                    console.error('[3D Viewer] Backup CDN also failed:', src);
                 };
                 document.head.appendChild(script);
             });
@@ -168,21 +168,7 @@
             font-size: 11px;
         }
         
-        /* Debug信息样式 */
-        .debug-info {
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 12px;
-            border-radius: 0 0 10px 0;
-            z-index: 100;
-            max-width: 300px;
-            display: none;
-        }
+
         
         /* 移动端优化 */
         @media (max-width: 768px) {
@@ -261,11 +247,7 @@
                 font-size: 14px;
             }
             
-            .glb-instructions {
-                max-width: 90% !important;
-                padding: 15px !important;
-                font-size: 12px !important;
-            }
+
         }
         
         /* 触摸设备优化 */
@@ -476,10 +458,7 @@
             <div class="model-container">
                 <canvas id="model-canvas" class="model-canvas"></canvas>
                 
-                <!-- 调试信息 -->
-                <div id="debug-info" class="debug-info" style="display: none;">
-                    <strong>🔧 调试信息:</strong><br>
-                </div>
+
                 
                 <div id="loading" class="loading-spinner">
                     <div>🔄 Loading 3D Model...</div>
@@ -503,11 +482,9 @@
                     <div>• Drag: Pan view</div>
                 </div>
                 <div class="model-controls">
-                    <button class="model-btn" onclick="resetView()">🏠 重置</button>
-                    <button class="model-btn" onclick="toggleWireframe()">🔲 线框</button>
-                    <button class="model-btn" onclick="toggleAnimation()">▶️ 旋转</button>
-                    <button class="model-btn" onclick="showGLBInstructions()">📁 文件</button>
-                    <button class="model-btn" onclick="toggleDebug()">🔧 调试</button>
+                    <button class="model-btn" onclick="resetView()">🏠 Reset</button>
+                    <button class="model-btn" onclick="toggleWireframe()">🔲 Wireframe</button>
+                    <button class="model-btn" onclick="toggleAnimation()">▶️ Rotate</button>
                 </div>
             </div>
         </div>
@@ -643,23 +620,10 @@
         let isAnimating = false;
         let animationId;
         let modelLoaded = false;
-        let debugMode = true; // 启用调试模式
-        let initAttempted = false; // 防止重复初始化
-        let backupCDNLoading = false; // 防止重复加载备用CDN
+        let initAttempted = false; // Prevent duplicate initialization
+        let backupCDNLoading = false; // Prevent duplicate CDN loading
 
-        // 调试函数
-        function debug(message) {
-            if (debugMode) {
-                console.log('[3D Viewer]', message);
-                const debugEl = document.getElementById('debug-info');
-                if (debugEl) {
-                    debugEl.innerHTML += message + '<br>';
-                    debugEl.style.display = 'block';
-                }
-            }
-        }
-
-        // 库状态检查函数
+        // Library status check function
         function checkLibraryStatus() {
             const status = {
                 THREE: typeof THREE !== 'undefined',
@@ -668,13 +632,13 @@
             };
             
             if (status.THREE) {
-                // 检查 GLTFLoader - r147版本应该在THREE命名空间下
+                // Check GLTFLoader - r147 version should be under THREE namespace
                 status.GLTFLoader = typeof THREE.GLTFLoader !== 'undefined';
                 
-                // 检查 OrbitControls - r147版本应该在THREE命名空间下
+                // Check OrbitControls - r147 version should be under THREE namespace
                 status.OrbitControls = typeof THREE.OrbitControls !== 'undefined';
                 
-                // 如果不在THREE命名空间下，检查是否在全局
+                // If not under THREE namespace, check global
                 if (!status.GLTFLoader && typeof window.GLTFLoader !== 'undefined') {
                     status.GLTFLoader = true;
                 }
@@ -683,63 +647,63 @@
                 }
             }
             
-            debug(`库状态检查: THREE=${status.THREE}, GLTFLoader=${status.GLTFLoader}, OrbitControls=${status.OrbitControls}`);
+            console.log(`[3D Viewer] Library status: THREE=${status.THREE}, GLTFLoader=${status.GLTFLoader}, OrbitControls=${status.OrbitControls}`);
             return status;
         }
 
         function init() {
-            debug('开始初始化3D查看器...');
+            console.log('[3D Viewer] Initializing 3D viewer...');
             
-            // 防止重复初始化
+            // Prevent duplicate initialization
             if (initAttempted) {
-                debug('已经尝试过初始化，跳过');
+                console.log('[3D Viewer] Initialization already attempted, skipping');
                 return;
             }
             initAttempted = true;
             
-            // 详细状态检查
+            // Detailed status check
             const libStatus = checkLibraryStatus();
             
             try {
-                // 检查Three.js是否加载
+                // Check if Three.js is loaded
                 if (typeof THREE === 'undefined') {
-                    debug('错误: Three.js库未加载');
+                    console.log('[3D Viewer] Error: Three.js library not loaded');
                     showCSSFallback();
                     return;
                 }
-                debug('✓ Three.js库已加载');
+                console.log('[3D Viewer] ✓ Three.js library loaded');
 
-                // 获取容器
+                // Get container
                 const container = document.querySelector('.model-container');
                 if (!container) {
-                    debug('错误: 模型容器未找到');
-                    showFallback('模型容器未找到');
+                    console.log('[3D Viewer] Error: Model container not found');
+                    showFallback('Model container not found');
                     return;
                 }
-                debug('✓ 模型容器已找到');
+                console.log('[3D Viewer] ✓ Model container found');
 
-                // 创建场景
+                // Create scene
                 scene = new THREE.Scene();
                 scene.background = new THREE.Color(0x1a1a2e);
-                debug('✓ 场景已创建');
+                console.log('[3D Viewer] ✓ Scene created');
 
-                // 创建相机
+                // Create camera
                 const containerRect = container.getBoundingClientRect();
                 camera = new THREE.PerspectiveCamera(75, containerRect.width / containerRect.height, 0.1, 1000);
                 camera.position.set(3, 3, 3);
                 camera.lookAt(0, 0, 0);
-                debug('✓ 相机已创建');
+                console.log('[3D Viewer] ✓ Camera created');
 
-                // 获取canvas元素
+                // Get canvas element
                 const canvas = document.getElementById('model-canvas');
                 if (!canvas) {
-                    debug('错误: Canvas元素未找到');
-                    showFallback('Canvas元素未找到');
+                    console.log('[3D Viewer] Error: Canvas element not found');
+                    showFallback('Canvas element not found');
                     return;
                 }
-                debug('✓ Canvas元素已找到');
+                console.log('[3D Viewer] ✓ Canvas element found');
 
-                // 创建渲染器
+                // Create renderer
                 renderer = new THREE.WebGLRenderer({ 
                     canvas: canvas, 
                     antialias: true,
@@ -750,9 +714,9 @@
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 renderer.outputEncoding = THREE.sRGBEncoding;
-                debug('✓ 渲染器已创建');
+                console.log('[3D Viewer] ✓ Renderer created');
 
-                // 尝试添加控制器
+                // Try to add controls
                 try {
                     let OrbitControls = THREE.OrbitControls;
                     
@@ -764,29 +728,29 @@
                         controls.minDistance = 1;
                         controls.maxDistance = 10;
                         controls.maxPolarAngle = Math.PI / 2;
-                        debug('✓ OrbitControls已启用');
+                        console.log('[3D Viewer] ✓ OrbitControls enabled');
                     } else {
-                        debug('⚠ OrbitControls不可用，使用基本控制');
+                        console.log('[3D Viewer] ⚠ OrbitControls not available, using basic controls');
                     }
                 } catch (e) {
-                    debug('⚠ OrbitControls创建失败: ' + e.message);
+                    console.log('[3D Viewer] ⚠ OrbitControls creation failed: ' + e.message);
                 }
 
-                // 添加光照
+                // Add lighting
                 setupLighting();
-                debug('✓ 光照已设置');
+                console.log('[3D Viewer] ✓ Lighting setup complete');
 
-                // 尝试加载模型
+                // Try to load model
                 loadModel();
 
-                // 开始渲染循环
+                // Start render loop
                 animate();
-                debug('✓ 初始化完成');
+                console.log('[3D Viewer] ✓ Initialization complete');
 
             } catch (error) {
-                debug('初始化错误: ' + error.message);
+                console.error('[3D Viewer] Initialization error:', error.message);
                 console.error('Error initializing 3D viewer:', error);
-                showFallback('3D查看器初始化失败: ' + error.message);
+                showFallback('3D viewer initialization failed: ' + error.message);
             }
         }
 
@@ -812,30 +776,30 @@
         }
 
         function loadModel() {
-            debug('开始加载3D模型...');
+            console.log('[3D Viewer] Starting 3D model loading...');
             
             try {
-                // 检查GLTFLoader - r147版本应该在THREE命名空间下
+                // Check GLTFLoader - r147 version should be under THREE namespace
                 let GLTFLoader = THREE.GLTFLoader;
                 
                 if (!GLTFLoader) {
-                    debug('错误: GLTFLoader不可用，跳过GLB文件加载');
-                    debug('直接创建Three.js几何体模型');
+                    console.log('[3D Viewer] Error: GLTFLoader not available, skipping GLB file loading');
+                    console.log('[3D Viewer] Creating Three.js geometry model instead');
                     createFallbackModel();
                     return;
                 }
                 
-                debug('✓ GLTFLoader已找到');
+                console.log('[3D Viewer] ✓ GLTFLoader found');
                 const loader = new GLTFLoader();
                 
-                // 更新加载状态
+                // Update loading status
                 const loadingEl = document.getElementById('loading');
                 if (loadingEl) {
                     loadingEl.style.display = 'block';
-                    loadingEl.innerHTML = '🔄 正在加载3D模型...';
+                    loadingEl.innerHTML = '🔄 Loading 3D model...';
                 }
 
-                // 尝试多个可能的GLB文件路径
+                // Try multiple possible GLB file paths
                 const possiblePaths = [
                     './Vaccine_Cooler_0716034852_texture.glb',  
                     'Vaccine_Cooler_0716034852_texture.glb',   
@@ -844,30 +808,30 @@
                     './models/Vaccine_Cooler_0716034852_texture.glb'  
                 ];
                 
-                // 以下代码保留用于本地开发
+                // Code below is kept for local development
                 let pathIndex = 0;
                 
                 function tryLoadModel() {
                     if (pathIndex >= possiblePaths.length) {
-                        debug('❌ 所有路径都尝试失败，使用备用模型');
+                        console.log('[3D Viewer] ❌ All paths failed, using fallback model');
                         createFallbackModel();
                         return;
                     }
                     
                     const currentPath = possiblePaths[pathIndex];
-                    debug(`尝试路径 ${pathIndex + 1}/${possiblePaths.length}: ${currentPath}`);
+                    console.log(`[3D Viewer] Trying path ${pathIndex + 1}/${possiblePaths.length}: ${currentPath}`);
                     
                     loader.load(
                         currentPath,
                         function (gltf) {
-                            debug('✓ 模型加载成功，路径: ' + currentPath);
+                            console.log('[3D Viewer] ✓ Model loaded successfully, path: ' + currentPath);
                             model = gltf.scene;
                             
-                            // 调整模型
+                            // Adjust model
                             model.scale.set(1, 1, 1);
                             model.position.set(0, 0, 0);
                             
-                            // 启用阴影
+                            // Enable shadows
                             model.traverse(function (child) {
                                 if (child.isMesh) {
                                     child.castShadow = true;
@@ -882,59 +846,59 @@
                             scene.add(model);
                             modelLoaded = true;
                             
-                            // 隐藏加载指示器
+                            // Hide loading indicator
                             if (loadingEl) {
                                 loadingEl.style.display = 'none';
                             }
                             
-                            debug('✓ 模型已添加到场景');
-                            showModelInfo('真实3D模型已加载');
+                            console.log('[3D Viewer] ✓ Model added to scene');
+                            showModelInfo('Real 3D model loaded');
                         },
                         function (progress) {
                             if (progress.total > 0) {
                                 const percent = Math.round((progress.loaded / progress.total) * 100);
-                                debug('加载进度: ' + percent + '%');
+                                console.log('[3D Viewer] Loading progress: ' + percent + '%');
                                 if (loadingEl) {
                                     loadingEl.innerHTML = `
-                                        <div>🔄 正在加载3D模型...</div>
-                                        <div style="font-size: 14px; margin-top: 10px;">${percent}% 已完成</div>
-                                        <div style="font-size: 12px; margin-top: 5px;">路径: ${currentPath}</div>
+                                        <div>🔄 Loading 3D model...</div>
+                                        <div style="font-size: 14px; margin-top: 10px;">${percent}% complete</div>
+                                        <div style="font-size: 12px; margin-top: 5px;">Path: ${currentPath}</div>
                                     `;
                                 }
                             }
                         },
                         function (error) {
-                            debug(`❌ 路径失败: ${currentPath} - 错误: ${error}`);
+                            console.log(`[3D Viewer] ❌ Path failed: ${currentPath} - Error: ${error}`);
                             pathIndex++;
-                            setTimeout(tryLoadModel, 100); // 短暂延迟后尝试下一个路径
+                            setTimeout(tryLoadModel, 100); // Brief delay before trying next path
                         }
                     );
                 }
                 
-                // 开始尝试加载
+                // Start trying to load
                 tryLoadModel();
             } catch (error) {
-                debug('loadModel错误: ' + error.message);
+                console.error('[3D Viewer] loadModel error: ' + error.message);
                 console.error('Error in loadModel:', error);
                 createFallbackModel();
             }
         }
 
         function createFallbackModel() {
-            debug('创建备用模型...');
+            console.log('[3D Viewer] Creating fallback model...');
             
             try {
-                // 检查THREE是否已定义
+                // Check if THREE is defined
                 if (typeof THREE === 'undefined') {
-                    debug('THREE未定义，使用CSS备用模型');
+                    console.log('[3D Viewer] THREE undefined, using CSS fallback model');
                     showCSSFallback();
                     return;
                 }
                 
-                // 创建一个旋转的立方体组合
+                // Create a rotating cube group
                 const group = new THREE.Group();
                 
-                // 主立方体 (代表冷藏箱)
+                // Main cube (represents the refrigerator)
                 const mainGeometry = new THREE.BoxGeometry(1.5, 1, 1);
                 const mainMaterial = new THREE.MeshPhongMaterial({ 
                     color: 0x4fc3f7,
@@ -946,7 +910,7 @@
                 mainCube.receiveShadow = true;
                 group.add(mainCube);
                 
-                // 太阳能板 (顶部)
+                // Solar panel (top)
                 const solarGeometry = new THREE.BoxGeometry(1.8, 0.1, 1.2);
                 const solarMaterial = new THREE.MeshPhongMaterial({ 
                     color: 0x1a237e,
@@ -957,7 +921,7 @@
                 solarPanel.castShadow = true;
                 group.add(solarPanel);
                 
-                // 控制面板 (前面)
+                // Control panel (front)
                 const controlGeometry = new THREE.BoxGeometry(0.3, 0.2, 0.05);
                 const controlMaterial = new THREE.MeshPhongMaterial({ 
                     color: 0x00e676 
@@ -967,45 +931,45 @@
                 group.add(controlPanel);
                 
                 model = group;
-                model.position.set(0, -0.3, 0); // 稍微向下移动，确保居中
+                model.position.set(0, -0.3, 0); // Move down slightly to center
                 
                 scene.add(model);
                 modelLoaded = true;
                 
-                // 隐藏加载指示器
+                // Hide loading indicator
                 const loadingEl = document.getElementById('loading');
                 if (loadingEl) {
                     loadingEl.style.display = 'none';
                 }
                 
-                debug('✓ 备用模型已创建');
+                console.log('[3D Viewer] ✓ Fallback model created');
                 
-                // 显示说明
-                showModelInfo('显示简化的Vax Fridge模型');
+                // Show description
+                showModelInfo('Displaying simplified Vax Fridge model');
                 
             } catch (error) {
-                debug('创建备用模型失败: ' + error.message);
+                console.error('[3D Viewer] Creating fallback model failed: ' + error.message);
                 console.error('Error creating fallback model:', error);
                 showCSSFallback();
             }
         }
 
         function showCSSFallback() {
-            debug('显示CSS备用模型');
+            console.log('[3D Viewer] Showing CSS fallback model');
             
-            // 隐藏加载指示器
+            // Hide loading indicator
             const loadingEl = document.getElementById('loading');
             if (loadingEl) {
                 loadingEl.style.display = 'none';
             }
             
-            // 隐藏控制按钮
+            // Hide control buttons
             const controls = document.querySelector('.model-controls');
             if (controls) {
                 controls.style.display = 'none';
             }
             
-            // 创建CSS 3D模型
+            // Create CSS 3D model
             const container = document.querySelector('.model-container');
             if (container) {
                 const cssModel = document.createElement('div');
@@ -1027,7 +991,7 @@
                             transform-style: preserve-3d;
                             animation: cssRotate 6s infinite linear;
                         ">
-                            <!-- 主体 -->
+                            <!-- Main body -->
                             <div style="
                                 position: absolute;
                                 top: 0;
@@ -1038,7 +1002,7 @@
                                 border-radius: inherit;
                             "></div>
                             
-                            <!-- 太阳能板 -->
+                            <!-- Solar panel -->
                             <div style="
                                 position: absolute;
                                 top: -20px;
@@ -1050,7 +1014,7 @@
                                 box-shadow: 0 5px 15px rgba(26, 35, 126, 0.3);
                             "></div>
                             
-                            <!-- 控制面板 -->
+                            <!-- Control panel -->
                             <div style="
                                 position: absolute;
                                 top: 30px;
@@ -1062,7 +1026,7 @@
                                 box-shadow: 0 3px 10px rgba(0, 230, 118, 0.3);
                             "></div>
                             
-                            <!-- 标签 -->
+                            <!-- Label -->
                             <div style="
                                 position: absolute;
                                 bottom: -40px;
@@ -1087,12 +1051,12 @@
                 `;
                 container.appendChild(cssModel);
                 
-                // 显示说明
-                showModelInfo('Three.js加载失败，显示CSS备用模型');
+                // Show description
+                showModelInfo('Three.js loading failed, showing CSS fallback model');
                 
-                // 添加重试按钮
+                // Add retry button
                 const retryBtn = document.createElement('button');
-                retryBtn.textContent = '🔄 重新加载';
+                retryBtn.textContent = '🔄 Reload';
                 retryBtn.className = 'model-btn';
                 retryBtn.style.cssText = `
                     position: absolute;
@@ -1139,63 +1103,10 @@
             }
         }
 
-        function showGLBInstructions() {
-            const container = document.querySelector('.model-container');
-            if (container) {
-                // 移除已存在的说明
-                const existingInstructions = container.querySelector('.glb-instructions');
-                if (existingInstructions) {
-                    existingInstructions.remove();
-                }
-                
-                const instructions = document.createElement('div');
-                instructions.className = 'glb-instructions';
-                instructions.style.cssText = `
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: rgba(26, 26, 46, 0.95);
-                    color: white;
-                    padding: 20px;
-                    border-radius: 15px;
-                    font-size: 14px;
-                    z-index: 50;
-                    backdrop-filter: blur(10px);
-                    text-align: center;
-                    max-width: 400px;
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                `;
-                instructions.innerHTML = `
-                    <h3 style="margin: 0 0 15px 0; color: #4fc3f7;">📁 GLB文件放置说明</h3>
-                    <p style="margin: 0 0 10px 0; line-height: 1.4;">
-                        要显示真实的3D模型，请将您的GLB文件放置在以下位置之一：
-                    </p>
-                    <div style="text-align: left; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; margin: 10px 0;">
-                        • ./Vaccine_Cooler_0716034852_texture.glb<br>
-                        • /Vaccine_Cooler_0716034852_texture.glb<br>
-                        • ./assets/Vaccine_Cooler_0716034852_texture.glb<br>
-                        • ./models/Vaccine_Cooler_0716034852_texture.glb
-                    </div>
-                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #aaa;">
-                        目前显示的是备用模型。刷新页面以重新尝试加载。
-                    </p>
-                    <button onclick="this.parentElement.remove()" style="
-                        margin-top: 10px; 
-                        padding: 5px 15px; 
-                        background: #4fc3f7; 
-                        border: none; 
-                        border-radius: 5px; 
-                        color: white; 
-                        cursor: pointer;
-                    ">知道了</button>
-                `;
-                container.appendChild(instructions);
-            }
-        }
+
 
         function showFallback(message) {
-            debug('显示备用界面: ' + message);
+            console.log('[3D Viewer] Showing fallback interface: ' + message);
             
             const loadingEl = document.getElementById('loading');
             if (loadingEl) {
@@ -1225,9 +1136,9 @@
         }
 
         function resetView() {
-            debug('重置视角');
+            console.log('[3D Viewer] Resetting view');
             if (typeof THREE === 'undefined') {
-                debug('Three.js未可用，无法重置视角');
+                console.log('[3D Viewer] Three.js not available, cannot reset view');
                 return;
             }
             if (controls) {
@@ -1240,9 +1151,9 @@
         }
 
         function toggleWireframe() {
-            debug('切换线框模式');
+            console.log('[3D Viewer] Toggling wireframe mode');
             if (typeof THREE === 'undefined' || !model) {
-                debug('Three.js或模型未可用，无法切换线框模式');
+                console.log('[3D Viewer] Three.js or model not available, cannot toggle wireframe');
                 return;
             }
             isWireframe = !isWireframe;
@@ -1258,34 +1169,15 @@
         }
 
         function toggleAnimation() {
-            debug('切换动画');
+            console.log('[3D Viewer] Toggling animation');
             isAnimating = !isAnimating;
             const btns = document.querySelectorAll('.model-controls .model-btn');
             if (btns.length >= 3) {
-                btns[2].textContent = isAnimating ? '⏸️ 暂停' : '▶️ 旋转';
+                btns[2].textContent = isAnimating ? '⏸️ Pause' : '▶️ Rotate';
             }
         }
 
-        function toggleDebug() {
-            debug('切换调试模式');
-            debugMode = !debugMode;
-            const debugEl = document.getElementById('debug-info');
-            if (debugEl) {
-                debugEl.style.display = debugMode ? 'block' : 'none';
-                if (debugMode) {
-                    // 显示调试信息时，执行一次库状态检查
-                    checkLibraryStatus();
-                    debug(`模型加载状态: ${modelLoaded ? '已加载' : '未加载'}`);
-                    debug(`初始化状态: ${initAttempted ? '已尝试' : '未尝试'}`);
-                }
-            }
-            const btns = document.querySelectorAll('.model-controls .model-btn');
-            if (btns.length >= 5) {
-                btns[4].textContent = debugMode ? '🔧 关闭' : '🔧 调试';
-            }
-        }
-
-        // 窗口大小改变处理
+        // Window resize handling
         window.addEventListener('resize', function() {
             if (camera && renderer) {
                 const container = document.querySelector('.model-container');
@@ -1294,47 +1186,47 @@
                     camera.aspect = rect.width / rect.height;
                     camera.updateProjectionMatrix();
                     renderer.setSize(rect.width, rect.height);
-                    debug('视窗大小已更新');
+                    console.log('[3D Viewer] Viewport size updated');
                 }
             }
         });
 
-        // 页面加载完成后初始化
+        // Initialize after page load
         document.addEventListener('DOMContentLoaded', function() {
-            debug('DOM加载完成，等待库文件...');
+            console.log('[3D Viewer] DOM loaded, waiting for libraries...');
             
-            // 检查script标签是否存在
+            // Check if script tags exist
             const scripts = document.querySelectorAll('script[src*="three"]');
-            debug(`找到 ${scripts.length} 个Three.js相关的script标签`);
+            console.log(`[3D Viewer] Found ${scripts.length} Three.js related script tags`);
             
-            // 等待Three.js库加载完成
+            // Wait for Three.js library to load
             let attempts = 0;
-            const maxAttempts = 50; // 5秒超时
+            const maxAttempts = 50; // 5 second timeout
             
             function checkLibraries() {
                 attempts++;
                 if (typeof THREE !== 'undefined') {
-                    // 额外检查GLTFLoader和OrbitControls
+                    // Additional check for GLTFLoader and OrbitControls
                     const hasGLTF = typeof THREE.GLTFLoader !== 'undefined';
                     const hasOrbit = typeof THREE.OrbitControls !== 'undefined';
                     
-                    debug(`Three.js: ✓, GLTFLoader: ${hasGLTF ? '✓' : '❌'}, OrbitControls: ${hasOrbit ? '✓' : '⚠'}`);
+                    console.log(`[3D Viewer] Three.js: ✓, GLTFLoader: ${hasGLTF ? '✓' : '❌'}, OrbitControls: ${hasOrbit ? '✓' : '⚠'}`);
                     
-                    // 等待一段时间让所有库加载完成，或者GLTFLoader已经可用
-                    if (hasGLTF || attempts > 20) { // 减少等待时间，2秒后强制初始化
-                        debug('开始初始化...');
+                    // Wait some time for all libraries to load, or if GLTFLoader is available
+                    if (hasGLTF || attempts > 20) { // Reduce wait time, force init after 2 seconds
+                        console.log('[3D Viewer] Starting initialization...');
                         setTimeout(init, 100);
                     } else {
-                        debug('等待GLTFLoader加载...');
-                        setTimeout(checkLibraries, 100); // 减少检查间隔
+                        console.log('[3D Viewer] Waiting for GLTFLoader to load...');
+                        setTimeout(checkLibraries, 100); // Reduce check interval
                     }
                 } else if (attempts < maxAttempts) {
                     if (attempts % 5 === 0) {
-                        debug(`等待Three.js库... (${attempts}/${maxAttempts})`);
+                        console.log(`[3D Viewer] Waiting for Three.js library... (${attempts}/${maxAttempts})`);
                     }
                     setTimeout(checkLibraries, 100);
                 } else {
-                    debug('Three.js加载超时，使用CSS备用模型');
+                    console.log('[3D Viewer] Three.js loading timeout, using CSS fallback model');
                     showCSSFallback();
                 }
             }
@@ -1342,30 +1234,30 @@
             checkLibraries();
         });
 
-        // 页面完全加载后的额外检查
+        // Additional check after page fully loads
         window.addEventListener('load', function() {
             setTimeout(function() {
                 if (typeof THREE === 'undefined' && !modelLoaded) {
-                    debug('页面加载完成但Three.js仍未可用');
+                    console.log('[3D Viewer] Page loaded but Three.js still not available');
                     showCSSFallback();
                 }
             }, 2000);
         });
 
-        // 模型加载超时保护
+        // Model loading timeout protection
         setTimeout(function() {
             if (!modelLoaded) {
-                debug('模型加载超时，使用备用方案');
-                debug(`当前状态: THREE=${typeof THREE !== 'undefined' ? '✓' : '❌'}, 初始化=${initAttempted ? '✓' : '❌'}`);
+                console.log('[3D Viewer] Model loading timeout, using fallback solution');
+                console.log(`[3D Viewer] Current status: THREE=${typeof THREE !== 'undefined' ? '✓' : '❌'}, Initialized=${initAttempted ? '✓' : '❌'}`);
                 if (typeof THREE !== 'undefined') {
                     createFallbackModel();
                 } else {
                     showCSSFallback();
                 }
             } else {
-                debug('✓ 3D模型已成功加载');
+                console.log('[3D Viewer] ✓ 3D model loaded successfully');
             }
-        }, 10000); // 减少到10秒
+        }, 10000); // Reduced to 10 seconds
     </script>
 
     <script src="script.js"></script>
