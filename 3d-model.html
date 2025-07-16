@@ -347,7 +347,7 @@
                     <div class="dropdown">
                         <a href="clinical-trials.html">Indonesia Pilot</a>
                         <a href="regulatory-approval.html">Regulatory Pathway</a>
-                        <a href="partnerships.html">Strategic Partnerships</a>
+                        <a href="partnerships.html">Partnerships</a>
                         <a href="global-impact.html">Innovation Impact</a>
                         <a href="sustainability.html">Sustainability</a>
                         <a href="quality-assurance.html">Quality Assurance</a>
@@ -443,9 +443,9 @@
                     <h3>Vax Fridge 3D Model</h3>
                     <p>Interactive 3D model preview</p>
                     <div style="margin-top: 20px;">
-                        <div>📏 Dimensions: 60×40×45 cm</div>
-                        <div>⚖️ Weight: 25 kg</div>
-                        <div>❄️ Temperature: -80°C</div>
+                        <div>📏 Compact Design</div>
+                                        <div>⚖️ Portable Design</div>
+                <div>❄️ Ultra-Low Temperature</div>
                         <div>☀️ Solar Powered</div>
                     </div>
                 </div>
@@ -476,48 +476,48 @@
             <div class="section-header">
                 <h2 class="section-title">Design Specifications</h2>
                 <p class="section-subtitle">
-                    Technical details and dimensions of the Vax Fridge system
+                    Conceptual design details of the Vax Fridge system
                 </p>
             </div>
             
             <div class="model-specs">
                 <div class="spec-card">
-                    <div class="spec-title">📏 Dimensions</div>
-                    <div class="spec-value">Length: 60cm</div>
-                    <div class="spec-value">Width: 40cm</div>
-                    <div class="spec-value">Height: 45cm</div>
-                    <div class="spec-value">Weight: 25kg</div>
+                                    <div class="spec-title">📏 Design Concept</div>
+                <div class="spec-value">Portable Form Factor</div>
+                <div class="spec-value">Optimized Footprint</div>
+                <div class="spec-value">Modular Structure</div>
+                    <div class="spec-value">Portable Design</div>
                 </div>
                 
                 <div class="spec-card">
                     <div class="spec-title">❄️ Ultra-Low Cooling System</div>
-                    <div class="spec-value">Temperature Range: -80°C</div>
-                    <div class="spec-value">Cooling Capacity: 50L</div>
-                    <div class="spec-value">Insulation: High-density foam</div>
-                    <div class="spec-value">Backup Time: 72 hours</div>
+                    <div class="spec-value">Ultra-Low Temperature</div>
+                    <div class="spec-value">Adequate Capacity</div>
+                    <div class="spec-value">Insulation: Advanced Materials</div>
+                    <div class="spec-value">Extended Backup</div>
                 </div>
                 
                 <div class="spec-card">
                     <div class="spec-title">☀️ Solar Power</div>
-                    <div class="spec-value">Panel Output: 200W</div>
-                    <div class="spec-value">Battery: 12V 100Ah LiFePO4</div>
-                    <div class="spec-value">Charge Time: 6-8 hours</div>
-                    <div class="spec-value">Runtime: 5-7 days</div>
+                    <div class="spec-value">High-Output Panels</div>
+                    <div class="spec-value">Battery: Advanced</div>
+                    <div class="spec-value">Fast Charging</div>
+                    <div class="spec-value">Extended Runtime</div>
                 </div>
                 
                 <div class="spec-card">
                     <div class="spec-title">📡 Monitoring</div>
-                    <div class="spec-value">Connectivity: 4G/WiFi</div>
-                    <div class="spec-value">GPS Tracking: Built-in</div>
+                                    <div class="spec-value">Connectivity: Wireless</div>
+                <div class="spec-value">Tracking: Integrated</div>
                     <div class="spec-value">Sensors: Temperature, humidity</div>
                     <div class="spec-value">Alerts: Real-time notifications</div>
                 </div>
                 
                 <div class="spec-card">
                     <div class="spec-title">🛡️ Protection</div>
-                    <div class="spec-value">Rating: IP65 weatherproof</div>
-                    <div class="spec-value">Material: Medical-grade ABS</div>
-                    <div class="spec-value">Lock: Digital keypad</div>
+                                    <div class="spec-value">Rating: Weather Resistant</div>
+                <div class="spec-value">Material: Medical-grade</div>
+                <div class="spec-value">Lock: Secure Access</div>
                     <div class="spec-value">Alarm: Tamper detection</div>
                 </div>
                 
@@ -561,7 +561,7 @@
                     </div>
                     <p class="footer-description">
                         Innovative solar-powered vaccine refrigeration for remote communities. 
-                        Starting with Indonesia pilot program in 2025.
+                        Planned for future pilot program in Indonesia.
                     </p>
                 </div>
                 <div class="footer-section">
@@ -744,13 +744,14 @@
 
                 // 尝试多个可能的GLB文件路径
                 const possiblePaths = [
-                    './Design_a_portable_so_0715141705_texture.glb',  // 当前目录
-                    'Design_a_portable_so_0715141705_texture.glb',   // 相对路径
-                    '/Design_a_portable_so_0715141705_texture.glb',   // 根目录
-                    './assets/Design_a_portable_so_0715141705_texture.glb',  // assets目录
-                    './models/Design_a_portable_so_0715141705_texture.glb'   // models目录
+                    './Vaccine_Cooler_0716034852_texture.glb',  
+                    'Vaccine_Cooler_0716034852_texture.glb',   
+                    '/Vaccine_Cooler_0716034852_texture.glb',   
+                    './assets/Vaccine_Cooler_0716034852_texture.glb',  
+                    './models/Vaccine_Cooler_0716034852_texture.glb'  
                 ];
                 
+                // 以下代码保留用于本地开发
                 let pathIndex = 0;
                 
                 function tryLoadModel() {
@@ -879,13 +880,8 @@
                 
                 debug('✓ 备用模型已创建');
                 
-                // 显示说明和GLB文件放置指导
+                // 显示说明
                 showModelInfo('显示简化的Vax Fridge模型');
-                
-                // 3秒后显示GLB文件放置说明
-                setTimeout(() => {
-                    showGLBInstructions();
-                }, 3000);
                 
             } catch (error) {
                 debug('创建备用模型失败: ' + error.message);
@@ -958,10 +954,10 @@
                         要显示真实的3D模型，请将您的GLB文件放置在以下位置之一：
                     </p>
                     <div style="text-align: left; font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; margin: 10px 0;">
-                        • ./Design_a_portable_so_0715141705_texture.glb<br>
-                        • /Design_a_portable_so_0715141705_texture.glb<br>
-                        • ./assets/Design_a_portable_so_0715141705_texture.glb<br>
-                        • ./models/Design_a_portable_so_0715141705_texture.glb
+                        • ./Vaccine_Cooler_0716034852_texture.glb<br>
+                        • /Vaccine_Cooler_0716034852_texture.glb<br>
+                        • ./assets/Vaccine_Cooler_0716034852_texture.glb<br>
+                        • ./models/Vaccine_Cooler_0716034852_texture.glb
                     </div>
                     <p style="margin: 10px 0 0 0; font-size: 12px; color: #aaa;">
                         目前显示的是备用模型。刷新页面以重新尝试加载。

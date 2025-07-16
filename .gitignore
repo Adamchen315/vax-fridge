@@ -1,0 +1,96 @@
+# 3D模型文件（文件过大）
+*.glb
+*.gltf
+Design_a_portable_so_0715141705_texture.glb
+
+# 大型资源文件
+*.bin
+*.obj
+*.fbx
+
+# Windows系统文件
+Thumbs.db
+Desktop.ini
+*.lnk
+
+# 用户个人文件夹和数据
+AppData/
+Documents/
+Downloads/
+Desktop/
+Pictures/
+Videos/
+Music/
+Contacts/
+Favorites/
+Links/
+OneDrive/
+Templates/
+SendTo/
+PrintHood/
+NetHood/
+Recent/
+Searches/
+"Saved Games"/
+Tracing/
+Cookies/
+"Local Settings"/
+"My Documents"/
+IntelGraphicsProfiles/
+temp/
+"「开始」菜单"/
+"3D Objects"/
+
+# 系统文件
+NTUSER.*
+ntuser.*
+*.LOG1
+*.LOG2
+*.blf
+*.regtrans-ms
+
+# 临时文件和缓存
+*.tmp
+*.temp
+*.cache
+.DS_Store
+*.swp
+*.swo
+*~
+
+# 编辑器和IDE文件
+.vscode/
+.idea/
+*.sublime-*
+
+# 开发工具生成的文件
+node_modules/
+.sass-cache/
+dist/
+build/
+
+# 个人配置文件
+*.ini
+*.bat
+
+# 压缩文件
+*.zip
+*.rar
+*.7z
+
+# 不需要的脚本文件
+create-*.js
+generate-*.js
+update-*.js
+remove-*.js
+test-*.html
+template.html
+
+# 其他不相关的文件
+*.exe
+*.msi
+*.dmp
+*.dat
+*.db
+*.etl
+*.bak 
