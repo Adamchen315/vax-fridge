@@ -6,9 +6,12 @@
     <title>Vax Fridge 3D Model - Interactive Design</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/GLTFLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/OrbitControls.js"></script>
+    
+    <!-- Three.js 库 -->
+    <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.158.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://unpkg.com/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
+    
     <style>
         .model-container {
             position: relative;
@@ -76,6 +79,117 @@
             color: white;
             font-size: 18px;
             text-align: center;
+            z-index: 10;
+        }
+        
+        .fallback-image {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 80%;
+            max-height: 80%;
+            opacity: 0.8;
+        }
+        
+        .model-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 11px;
+        }
+        
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            .model-container {
+                height: 400px;
+                margin: 0 10px;
+                border-radius: 15px;
+            }
+            
+            .model-controls {
+                bottom: 10px;
+                padding: 10px;
+                gap: 8px;
+                border-radius: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .model-btn {
+                padding: 8px 15px;
+                font-size: 12px;
+                min-width: 60px;
+            }
+            
+            .model-info {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                padding: 10px;
+                font-size: 11px;
+                border-radius: 10px;
+            }
+            
+            .model-info-grid {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+            
+            .loading-spinner {
+                font-size: 16px;
+                padding: 0 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .model-container {
+                height: 300px;
+                border-radius: 10px;
+            }
+            
+            .model-controls {
+                padding: 8px;
+                gap: 5px;
+            }
+            
+            .model-btn {
+                padding: 6px 12px;
+                font-size: 11px;
+                min-width: 50px;
+            }
+            
+            .model-info {
+                padding: 8px;
+                font-size: 10px;
+            }
+            
+            .loading-spinner {
+                font-size: 14px;
+            }
+        }
+        
+        /* 触摸设备优化 */
+        @media (hover: none) and (pointer: coarse) {
+            .model-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+            
+            .model-controls {
+                padding: 15px;
+                gap: 10px;
+            }
+        }
+        
+        /* 确保canvas在所有设备上正确显示 */
+        .model-canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            touch-action: none; /* 防止移动端滚动干扰 */
         }
         
         .model-specs {
@@ -439,21 +553,36 @@
 
                 // Create camera
                 const container = document.querySelector('.model-container');
+                if (!container) {
+                    showFallback('Model container not found');
+                    return;
+                }
+                
                 camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
                 camera.position.set(2, 2, 2);
 
                 // Create renderer
                 const canvas = document.getElementById('model-canvas');
+                if (!canvas) {
+                    showFallback('Canvas element not found');
+                    return;
+                }
+                
                 renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
                 renderer.setSize(container.clientWidth, container.clientHeight);
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-                // Add controls
-                if (typeof THREE.OrbitControls !== 'undefined') {
+                // Add controls - 修复OrbitControls的引用
+                try {
                     controls = new THREE.OrbitControls(camera, renderer.domElement);
                     controls.enableDamping = true;
                     controls.dampingFactor = 0.05;
+                    controls.screenSpacePanning = false;
+                    controls.minDistance = 1;
+                    controls.maxDistance = 10;
+                } catch (e) {
+                    console.warn('OrbitControls not available:', e);
                 }
 
                 // Add lights
@@ -463,6 +592,8 @@
                 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
                 directionalLight.position.set(5, 5, 5);
                 directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 2048;
+                directionalLight.shadow.mapSize.height = 2048;
                 scene.add(directionalLight);
 
                 const pointLight = new THREE.PointLight(0x4fc3f7, 0.5);
@@ -477,18 +608,25 @@
 
             } catch (error) {
                 console.error('Error initializing 3D viewer:', error);
-                showFallback('Failed to initialize 3D viewer');
+                showFallback('Failed to initialize 3D viewer: ' + error.message);
             }
         }
 
         function loadModel() {
             try {
+                // 检查GLTFLoader是否可用
                 if (typeof THREE.GLTFLoader === 'undefined') {
-                    showFallback('GLTF Loader not available');
+                    console.error('GLTFLoader not available');
+                    createFallbackModel();
                     return;
                 }
 
                 const loader = new THREE.GLTFLoader();
+                
+                // 显示加载状态
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('loading').innerHTML = '🔄 Loading 3D Model...';
+                
                 loader.load(
                     'Design_a_portable_so_0715141705_texture.glb',
                     function (gltf) {
@@ -503,6 +641,11 @@
                             if (child.isMesh) {
                                 child.castShadow = true;
                                 child.receiveShadow = true;
+                                
+                                // 确保材质正确显示
+                                if (child.material) {
+                                    child.material.needsUpdate = true;
+                                }
                             }
                         });
                         
@@ -515,27 +658,75 @@
                         console.log('3D model loaded successfully');
                     },
                     function (progress) {
-                        const percent = Math.round((progress.loaded / progress.total) * 100);
-                        console.log('Loading progress:', percent + '%');
-                        document.getElementById('loading').innerHTML = `
-                            <div>🔄 Loading 3D Model...</div>
-                            <div style="font-size: 14px; margin-top: 10px;">${percent}% loaded</div>
-                        `;
+                        if (progress.total > 0) {
+                            const percent = Math.round((progress.loaded / progress.total) * 100);
+                            console.log('Loading progress:', percent + '%');
+                            document.getElementById('loading').innerHTML = `
+                                <div>🔄 Loading 3D Model...</div>
+                                <div style="font-size: 14px; margin-top: 10px;">${percent}% loaded</div>
+                            `;
+                        }
                     },
                     function (error) {
                         console.error('Error loading 3D model:', error);
-                        showFallback('3D model file not found or corrupted');
+                        createFallbackModel();
                     }
                 );
             } catch (error) {
                 console.error('Error in loadModel:', error);
-                showFallback('Failed to load 3D model');
+                createFallbackModel();
+            }
+        }
+
+        function createFallbackModel() {
+            // 创建一个简单的立方体作为fallback
+            try {
+                const geometry = new THREE.BoxGeometry(1, 1, 1);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: 0x4fc3f7,
+                    shininess: 100 
+                });
+                
+                model = new THREE.Mesh(geometry, material);
+                model.position.set(0, 0, 0);
+                model.castShadow = true;
+                model.receiveShadow = true;
+                
+                scene.add(model);
+                modelLoaded = true;
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                console.log('Using fallback cube model');
+                
+                // 显示提示信息
+                const info = document.createElement('div');
+                info.style.cssText = `
+                    position: absolute;
+                    top: 10px;
+                    left: 10px;
+                    background: rgba(0,0,0,0.7);
+                    color: white;
+                    padding: 10px;
+                    border-radius: 5px;
+                    font-size: 12px;
+                    z-index: 10;
+                `;
+                info.textContent = '显示简化模型 (Simplified Model)';
+                document.querySelector('.model-container').appendChild(info);
+                
+            } catch (error) {
+                console.error('Error creating fallback model:', error);
+                showFallback('Unable to create 3D model');
             }
         }
 
         function showFallback(message) {
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('fallback').style.display = 'block';
+            const fallback = document.getElementById('fallback');
+            if (fallback) {
+                fallback.style.display = 'block';
+            }
             console.log('Showing fallback:', message);
         }
 
@@ -566,8 +757,12 @@
             if (model) {
                 isWireframe = !isWireframe;
                 model.traverse(function (child) {
-                    if (child.isMesh) {
-                        child.material.wireframe = isWireframe;
+                    if (child.isMesh && child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(mat => mat.wireframe = isWireframe);
+                        } else {
+                            child.material.wireframe = isWireframe;
+                        }
                     }
                 });
             }
@@ -585,24 +780,26 @@
         window.addEventListener('resize', function() {
             if (camera && renderer) {
                 const container = document.querySelector('.model-container');
-                camera.aspect = container.clientWidth / container.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
+                if (container) {
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }
             }
         });
 
         // Initialize when page loads
-        window.addEventListener('load', function() {
-            // Add a small delay to ensure all libraries are loaded
-            setTimeout(init, 100);
+        window.addEventListener('DOMContentLoaded', function() {
+            // 等待所有库加载完成
+            setTimeout(init, 500);
         });
 
-        // Fallback if 3D model fails to load after 10 seconds
+        // Fallback if 3D model fails to load after 15 seconds
         setTimeout(function() {
             if (!modelLoaded) {
-                showFallback('3D model loading timeout - showing concept preview');
+                createFallbackModel();
             }
-        }, 10000);
+        }, 15000);
     </script>
 
     <script src="script.js"></script>
