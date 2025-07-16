@@ -7,10 +7,10 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Three.js 库 - 兼容版本 -->
-    <script src="https://unpkg.com/three@0.155.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.155.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://unpkg.com/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Three.js 库 - 兼容版本 (使用r147，最后支持script标签加载的版本) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
     
     <!-- 备用CDN -->
     <script>
@@ -31,9 +31,9 @@
             backupCDNLoading = true;
             
             const scripts = [
-                'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js',
-                'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/GLTFLoader.js',
-                'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.js'
+                'https://unpkg.com/three@0.147.0/build/three.min.js',
+                'https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js',
+                'https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js'
             ];
             
             let loadedCount = 0;
@@ -668,8 +668,19 @@
             };
             
             if (status.THREE) {
-                status.GLTFLoader = typeof THREE.GLTFLoader !== 'undefined' || typeof window.GLTFLoader !== 'undefined';
-                status.OrbitControls = typeof THREE.OrbitControls !== 'undefined' || typeof window.OrbitControls !== 'undefined';
+                // 检查 GLTFLoader - r147版本应该在THREE命名空间下
+                status.GLTFLoader = typeof THREE.GLTFLoader !== 'undefined';
+                
+                // 检查 OrbitControls - r147版本应该在THREE命名空间下
+                status.OrbitControls = typeof THREE.OrbitControls !== 'undefined';
+                
+                // 如果不在THREE命名空间下，检查是否在全局
+                if (!status.GLTFLoader && typeof window.GLTFLoader !== 'undefined') {
+                    status.GLTFLoader = true;
+                }
+                if (!status.OrbitControls && typeof window.OrbitControls !== 'undefined') {
+                    status.OrbitControls = true;
+                }
             }
             
             debug(`库状态检查: THREE=${status.THREE}, GLTFLoader=${status.GLTFLoader}, OrbitControls=${status.OrbitControls}`);
@@ -744,14 +755,6 @@
                 // 尝试添加控制器
                 try {
                     let OrbitControls = THREE.OrbitControls;
-                    if (!OrbitControls) {
-                        // 尝试全局OrbitControls
-                        if (typeof window.OrbitControls !== 'undefined') {
-                            OrbitControls = window.OrbitControls;
-                        } else if (typeof window.THREE && window.THREE.OrbitControls) {
-                            OrbitControls = window.THREE.OrbitControls;
-                        }
-                    }
                     
                     if (OrbitControls) {
                         controls = new OrbitControls(camera, renderer.domElement);
@@ -812,16 +815,8 @@
             debug('开始加载3D模型...');
             
             try {
-                // 检查GLTFLoader - 尝试多种可能的路径
+                // 检查GLTFLoader - r147版本应该在THREE命名空间下
                 let GLTFLoader = THREE.GLTFLoader;
-                if (!GLTFLoader) {
-                    // 尝试全局GLTFLoader
-                    if (typeof window.GLTFLoader !== 'undefined') {
-                        GLTFLoader = window.GLTFLoader;
-                    } else if (typeof window.THREE && window.THREE.GLTFLoader) {
-                        GLTFLoader = window.THREE.GLTFLoader;
-                    }
-                }
                 
                 if (!GLTFLoader) {
                     debug('错误: GLTFLoader不可用，跳过GLB文件加载');
@@ -1308,29 +1303,34 @@
         document.addEventListener('DOMContentLoaded', function() {
             debug('DOM加载完成，等待库文件...');
             
+            // 检查script标签是否存在
+            const scripts = document.querySelectorAll('script[src*="three"]');
+            debug(`找到 ${scripts.length} 个Three.js相关的script标签`);
+            
             // 等待Three.js库加载完成
             let attempts = 0;
-            const maxAttempts = 100; // 10秒超时
+            const maxAttempts = 50; // 5秒超时
             
             function checkLibraries() {
                 attempts++;
                 if (typeof THREE !== 'undefined') {
                     // 额外检查GLTFLoader和OrbitControls
-                    const hasGLTF = typeof THREE.GLTFLoader !== 'undefined' || typeof window.GLTFLoader !== 'undefined';
-                    const hasOrbit = typeof THREE.OrbitControls !== 'undefined' || typeof window.OrbitControls !== 'undefined';
+                    const hasGLTF = typeof THREE.GLTFLoader !== 'undefined';
+                    const hasOrbit = typeof THREE.OrbitControls !== 'undefined';
                     
                     debug(`Three.js: ✓, GLTFLoader: ${hasGLTF ? '✓' : '❌'}, OrbitControls: ${hasOrbit ? '✓' : '⚠'}`);
                     
-                    if (hasGLTF || attempts > 30) { // 如果GLTFLoader可用或等待足够长时间
+                    // 等待一段时间让所有库加载完成，或者GLTFLoader已经可用
+                    if (hasGLTF || attempts > 20) { // 减少等待时间，2秒后强制初始化
                         debug('开始初始化...');
                         setTimeout(init, 100);
                     } else {
                         debug('等待GLTFLoader加载...');
-                        setTimeout(checkLibraries, 200);
+                        setTimeout(checkLibraries, 100); // 减少检查间隔
                     }
                 } else if (attempts < maxAttempts) {
-                    if (attempts % 10 === 0) {
-                        debug(`等待Three.js库... (${attempts}/100)`);
+                    if (attempts % 5 === 0) {
+                        debug(`等待Three.js库... (${attempts}/${maxAttempts})`);
                     }
                     setTimeout(checkLibraries, 100);
                 } else {
@@ -1356,13 +1356,16 @@
         setTimeout(function() {
             if (!modelLoaded) {
                 debug('模型加载超时，使用备用方案');
+                debug(`当前状态: THREE=${typeof THREE !== 'undefined' ? '✓' : '❌'}, 初始化=${initAttempted ? '✓' : '❌'}`);
                 if (typeof THREE !== 'undefined') {
                     createFallbackModel();
                 } else {
                     showCSSFallback();
                 }
+            } else {
+                debug('✓ 3D模型已成功加载');
             }
-        }, 15000);
+        }, 10000); // 减少到10秒
     </script>
 
     <script src="script.js"></script>
