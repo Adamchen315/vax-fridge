@@ -7,10 +7,10 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Three.js 库 - 更可靠的CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Three.js 库 - 兼容版本 -->
+    <script src="https://unpkg.com/three@0.155.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.155.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://unpkg.com/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
     
     <!-- 备用CDN -->
     <script>
@@ -31,9 +31,9 @@
             backupCDNLoading = true;
             
             const scripts = [
-                'https://unpkg.com/three@0.155.0/build/three.min.js',
-                'https://unpkg.com/three@0.155.0/examples/js/loaders/GLTFLoader.js',
-                'https://unpkg.com/three@0.155.0/examples/js/controls/OrbitControls.js'
+                'https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js',
+                'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/GLTFLoader.js',
+                'https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.js'
             ];
             
             let loadedCount = 0;
@@ -503,11 +503,11 @@
                     <div>• Drag: Pan view</div>
                 </div>
                 <div class="model-controls">
-                    <button class="model-btn" onclick="resetView()">🏠 Reset View</button>
-                    <button class="model-btn" onclick="toggleWireframe()">🔲 Wireframe</button>
-                    <button class="model-btn" onclick="toggleAnimation()">▶️ Animate</button>
-                    <button class="model-btn" onclick="showGLBInstructions()">📁 文件说明</button>
-                    <button class="model-btn" onclick="toggleDebug()">🔧 Debug</button>
+                    <button class="model-btn" onclick="resetView()">🏠 重置</button>
+                    <button class="model-btn" onclick="toggleWireframe()">🔲 线框</button>
+                    <button class="model-btn" onclick="toggleAnimation()">▶️ 旋转</button>
+                    <button class="model-btn" onclick="showGLBInstructions()">📁 文件</button>
+                    <button class="model-btn" onclick="toggleDebug()">🔧 调试</button>
                 </div>
             </div>
         </div>
@@ -659,6 +659,23 @@
             }
         }
 
+        // 库状态检查函数
+        function checkLibraryStatus() {
+            const status = {
+                THREE: typeof THREE !== 'undefined',
+                GLTFLoader: false,
+                OrbitControls: false
+            };
+            
+            if (status.THREE) {
+                status.GLTFLoader = typeof THREE.GLTFLoader !== 'undefined' || typeof window.GLTFLoader !== 'undefined';
+                status.OrbitControls = typeof THREE.OrbitControls !== 'undefined' || typeof window.OrbitControls !== 'undefined';
+            }
+            
+            debug(`库状态检查: THREE=${status.THREE}, GLTFLoader=${status.GLTFLoader}, OrbitControls=${status.OrbitControls}`);
+            return status;
+        }
+
         function init() {
             debug('开始初始化3D查看器...');
             
@@ -668,6 +685,9 @@
                 return;
             }
             initAttempted = true;
+            
+            // 详细状态检查
+            const libStatus = checkLibraryStatus();
             
             try {
                 // 检查Three.js是否加载
@@ -723,8 +743,18 @@
 
                 // 尝试添加控制器
                 try {
-                    if (typeof THREE.OrbitControls !== 'undefined') {
-                        controls = new THREE.OrbitControls(camera, renderer.domElement);
+                    let OrbitControls = THREE.OrbitControls;
+                    if (!OrbitControls) {
+                        // 尝试全局OrbitControls
+                        if (typeof window.OrbitControls !== 'undefined') {
+                            OrbitControls = window.OrbitControls;
+                        } else if (typeof window.THREE && window.THREE.OrbitControls) {
+                            OrbitControls = window.THREE.OrbitControls;
+                        }
+                    }
+                    
+                    if (OrbitControls) {
+                        controls = new OrbitControls(camera, renderer.domElement);
                         controls.enableDamping = true;
                         controls.dampingFactor = 0.05;
                         controls.screenSpacePanning = false;
@@ -782,14 +812,26 @@
             debug('开始加载3D模型...');
             
             try {
-                // 检查GLTFLoader
-                if (typeof THREE.GLTFLoader === 'undefined') {
-                    debug('错误: GLTFLoader不可用');
+                // 检查GLTFLoader - 尝试多种可能的路径
+                let GLTFLoader = THREE.GLTFLoader;
+                if (!GLTFLoader) {
+                    // 尝试全局GLTFLoader
+                    if (typeof window.GLTFLoader !== 'undefined') {
+                        GLTFLoader = window.GLTFLoader;
+                    } else if (typeof window.THREE && window.THREE.GLTFLoader) {
+                        GLTFLoader = window.THREE.GLTFLoader;
+                    }
+                }
+                
+                if (!GLTFLoader) {
+                    debug('错误: GLTFLoader不可用，跳过GLB文件加载');
+                    debug('直接创建Three.js几何体模型');
                     createFallbackModel();
                     return;
                 }
-
-                const loader = new THREE.GLTFLoader();
+                
+                debug('✓ GLTFLoader已找到');
+                const loader = new GLTFLoader();
                 
                 // 更新加载状态
                 const loadingEl = document.getElementById('loading');
@@ -1235,10 +1277,16 @@
             const debugEl = document.getElementById('debug-info');
             if (debugEl) {
                 debugEl.style.display = debugMode ? 'block' : 'none';
+                if (debugMode) {
+                    // 显示调试信息时，执行一次库状态检查
+                    checkLibraryStatus();
+                    debug(`模型加载状态: ${modelLoaded ? '已加载' : '未加载'}`);
+                    debug(`初始化状态: ${initAttempted ? '已尝试' : '未尝试'}`);
+                }
             }
             const btns = document.querySelectorAll('.model-controls .model-btn');
             if (btns.length >= 5) {
-                btns[4].textContent = debugMode ? '🔧 关闭调试' : '🔧 调试';
+                btns[4].textContent = debugMode ? '🔧 关闭' : '🔧 调试';
             }
         }
 
@@ -1267,8 +1315,19 @@
             function checkLibraries() {
                 attempts++;
                 if (typeof THREE !== 'undefined') {
-                    debug('Three.js检测成功，开始初始化...');
-                    setTimeout(init, 100);
+                    // 额外检查GLTFLoader和OrbitControls
+                    const hasGLTF = typeof THREE.GLTFLoader !== 'undefined' || typeof window.GLTFLoader !== 'undefined';
+                    const hasOrbit = typeof THREE.OrbitControls !== 'undefined' || typeof window.OrbitControls !== 'undefined';
+                    
+                    debug(`Three.js: ✓, GLTFLoader: ${hasGLTF ? '✓' : '❌'}, OrbitControls: ${hasOrbit ? '✓' : '⚠'}`);
+                    
+                    if (hasGLTF || attempts > 30) { // 如果GLTFLoader可用或等待足够长时间
+                        debug('开始初始化...');
+                        setTimeout(init, 100);
+                    } else {
+                        debug('等待GLTFLoader加载...');
+                        setTimeout(checkLibraries, 200);
+                    }
                 } else if (attempts < maxAttempts) {
                     if (attempts % 10 === 0) {
                         debug(`等待Three.js库... (${attempts}/100)`);
